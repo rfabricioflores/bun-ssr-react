@@ -8,14 +8,15 @@ const server = Bun.serve({
     port: 8080,
     async fetch(req) {
         if(req.method === "GET") {
-            const path = req.url.split(process.env.DOMAIN).slice(1).toString().toLowerCase();
+            const path = new URL(req.url).pathname;
+            console.log(path)
 
             switch(path) {
-                case '':
+                case '/':
                     return await render(<Home/>);
-                case 'home':
+                case '/home':
                     return await render(<Home/>);
-                case 'contact':
+                case '/contact':
                     return await render(<Contact/>);
                 default:
                     return await render(<Error/>);
