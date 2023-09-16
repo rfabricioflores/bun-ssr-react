@@ -4,35 +4,96 @@ import Home from './components/Home';
 import Contact from './components/Contact';
 import Error from './components/Error';
 
+import { fileExtensions, publicFolder } from './config';
+
+let pathname: string;
+
 const server = Bun.serve({
-    port: 8080,
+    port: process.env.PORT || 8080,
     async fetch(req) {
-        if(req.method === "GET") {
-            const path = new URL(req.url).pathname;
-            console.log(path)
+        pathname = new URL(req.url).pathname;
+        const method = req.method;
 
-            switch(path) {
-                case '/':
-                    return await render(<Home/>);
-                case '/home':
-                    return await render(<Home/>);
-                case '/contact':
-                    return await render(<Contact/>);
-                default:
-                    return await render(<Error/>);
-            }
+        switch(method) {
+            case "GET":
+                return await serve();
+            default: return new Response("404 Not found", { status: 404 });
         }
-
-        return new Response("404 not found")
     }
 });
 
-async function render(page: JSX.Element): Promise<Response> {
-    const html = await renderToReadableStream(<App page={page}/>)
+console.log(`Server running on port ${server.port}`);
 
-    return new Response(html, {
-        headers: {"Content-Type": "text/html"}
-    })
+async function serve() {
+    
+    // Serve static files
+    const lastPath = pathname.split('/').pop();
+    if(lastPath) {
+        // Checks if the last path starts with "." or if it doesn't have a "." at all
+        if(lastPath.indexOf('.') !==  0 || lastPath.indexOf('.') === -1) {
+            // File path must have at least one dot and can not have a dot at the end
+            if((lastPath.split('.').length - 1) >= 1 && !lastPath.endsWith(".")) {
+                // Finally it checks what files are allowed to render
+                let extension: boolean = false;
+
+                fileExtensions.forEach(ext => {
+                    if(pathname.endsWith(ext)) {
+                        extension = true;
+                        return;
+                    }
+                });
+            
+                if(extension) return await renderFile();
+            }
+        }
+    }
+
+
+    // Serves html
+    return await routes();
 }
 
-console.log(`Listening on port ${server.port}`);
+async function routes() {
+    switch(pathname) {
+        case '/':
+            return await renderPage(<Home/>);
+        case '/home':
+            return await renderPage(<Home/>);
+        case '/contact':
+            return await renderPage(<Contact/>);
+        default:
+            return await renderPage(<Error/>);
+    }
+}
+
+async function renderPage(page: JSX.Element): Promise<Response> {
+    try {
+        const html = await renderToReadableStream(<App page={page}/>)
+
+        return new Response(html, {
+            headers: {"Content-Type": "text/html"},
+            status: 200
+        });
+    } catch(e) {
+        console.log(e);
+        return new Response("An error ocurred, try again!", {status: 500});
+    }
+}
+
+
+async function renderFile(): Promise<Response> {
+    try {
+        const file = Bun.file(`./${publicFolder}${pathname}`);
+
+        if(await file.exists()) {
+            return new Response(file, {
+                headers: {"Content-Type": file.type},
+                status: 200
+            });
+        }
+        return new Response("404 Not Found", {status: 404});
+    } catch(e) {
+        console.log(e);
+        return new Response("An error ocurred, try again!", {status: 500});
+    }
+}
