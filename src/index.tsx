@@ -14,10 +14,6 @@ app.get("/", () => {
     return renderPage(<Home/>)
 });
 
-app.get("/home", () => {
-    return renderPage(<Home/>)
-});
-
 app.get("/contact", () => {
     return renderPage(<Contact/>)
 });

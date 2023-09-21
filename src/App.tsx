@@ -10,17 +10,21 @@ export default function App({ page }: Props) {
             </head>
             <body>
                 <nav>
-                    <h1>My Awesome SSR</h1>
+                    <a href="/">
+                        <h1>My Awesome SSR</h1>
+                    </a>
                     <ul>
                         <li>
-                            <a href="/home">Home</a>
+                            <a href="/">Home</a>
                         </li>
                         <li>
                             <a href="/contact">Contact</a>
                         </li>
                     </ul>
                 </nav>
-                {page}
+                <main>
+                    {page}
+                </main>
             </body> 
         </html>
     );
